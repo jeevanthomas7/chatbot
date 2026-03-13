@@ -28,17 +28,28 @@ function persistSessions(uid: string, sessions: ChatSession[]) {
 }
 
 const SkyLogo = ({ size = 32 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="skyG" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#0EA5E9"/>
-        <stop offset="100%" stopColor="#2563EB"/>
+      <linearGradient id="skyBg" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#52ADF5"/>
+        <stop offset="100%" stopColor="#1C6CEF"/>
       </linearGradient>
     </defs>
-    <rect width="40" height="40" rx="12" fill="url(#skyG)"/>
-    <path d="M12 15C12 13.343 13.343 12 15 12H24C27.314 12 30 14.686 30 18C30 21.314 27.314 24 24 24H20" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    <path d="M20 24L16 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    <circle cx="12" cy="28" r="2.5" fill="white" opacity="0.85"/>
+    <rect width="64" height="64" rx="14" fill="url(#skyBg)"/>
+    {/* Cloud body */}
+    <circle cx="32" cy="24" r="11" fill="white"/>
+    <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
+    <circle cx="42.5" cy="28" r="9" fill="white"/>
+    <circle cx="14" cy="32" r="6" fill="white"/>
+    <circle cx="50" cy="32" r="6.5" fill="white"/>
+    {/* Flat base */}
+    <rect x="8" y="32" width="48" height="7" fill="white"/>
+    {/* Chat tail */}
+    <polygon points="22,39 17,46 30,39" fill="white"/>
+    {/* Three typing dots (blue cutout) */}
+    <circle cx="24" cy="36" r="2.4" fill="url(#skyBg)"/>
+    <circle cx="32" cy="36" r="2.4" fill="url(#skyBg)"/>
+    <circle cx="40" cy="36" r="2.4" fill="url(#skyBg)"/>
   </svg>
 )
 
@@ -143,6 +154,23 @@ export default function ChatUI() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Prevent iOS Safari from zooming into the textarea on focus (causes layout jump)
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    const prevent = () => {
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1")
+    }
+    const restore = () => {
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (meta) meta.setAttribute("content", "width=device-width, initial-scale=1")
+    }
+    el.addEventListener("focus", prevent)
+    el.addEventListener("blur", restore)
+    return () => { el.removeEventListener("focus", prevent); el.removeEventListener("blur", restore) }
+  }, [])
 
   useEffect(() => {
     if (userId) {
@@ -375,7 +403,7 @@ export default function ChatUI() {
   ]
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'DM Sans','Inter',system-ui,sans-serif", background: "#F7F9FC" }}>
+    <div className="flex overflow-hidden" style={{ fontFamily: "'DM Sans','Inter',system-ui,sans-serif", background: "#F7F9FC", height: "100dvh" }}>
 
       {showLogoutModal && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogoutModal(false)}/>}
       {showLoginPrompt && <LoginPromptModal onSignIn={() => { setShowLoginPrompt(false); signIn("google") }} onDismiss={() => setShowLoginPrompt(false)}/>}
@@ -395,9 +423,9 @@ export default function ChatUI() {
         <SidebarContent/>
       </aside>
 
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
 
-        <header className="flex items-center shrink-0 px-3 sm:px-5" style={{ height: 56, background: "white", borderBottom: "1px solid #EEF2F7" }}>
+        <header className="flex items-center shrink-0 px-3 sm:px-5" style={{ height: 52, background: "white", borderBottom: "1px solid #EEF2F7" }}>
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors mr-1 shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
@@ -439,10 +467,10 @@ export default function ChatUI() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 pb-10 text-center">
-              <div className="mb-5 rounded-[22px] flex items-center justify-center" style={{ width: 72, height: 72, background: "linear-gradient(135deg,#0EA5E9,#2563EB)", boxShadow: "0 16px 48px -8px rgba(37,99,235,0.4)" }}>
+            <div className="flex flex-col items-center justify-center h-full px-4 pb-6 sm:pb-10 text-center">
+              <div className="mb-5 rounded-[22px] flex items-center justify-center" style={{ width: 72, height: 72, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)", boxShadow: "0 16px 48px -8px rgba(28,108,239,0.35)" }}>
                 <SkyLogo size={40}/>
               </div>
               <h1 className="font-extrabold mb-2 tracking-tight" style={{ fontSize: "clamp(20px,4vw,26px)", background: "linear-gradient(135deg,#0F172A,#1E40AF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
@@ -484,9 +512,9 @@ export default function ChatUI() {
           )}
         </div>
 
-        <div className="shrink-0 px-3 sm:px-6 py-3 sm:py-4" style={{ background: "white", borderTop: "1px solid #EEF2F7" }}>
+        <div className="shrink-0 px-3 sm:px-6 py-2 sm:py-3" style={{ background: "white", borderTop: "1px solid #EEF2F7" }}>
           <div
-            className="flex items-end gap-2.5 max-w-3xl mx-auto rounded-2xl px-3.5 py-2.5 transition-all duration-200"
+            className="flex items-end gap-2 sm:gap-2.5 max-w-3xl mx-auto rounded-2xl px-3 sm:px-3.5 py-2 sm:py-2.5 transition-all duration-200"
             style={{ background: "#F7F9FC", border: "1.5px solid #E2E8F0" }}
             onFocusCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#93C5FD"; el.style.boxShadow="0 0 0 3px rgba(147,197,253,0.2)"; el.style.background="white" }}
             onBlurCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#E2E8F0"; el.style.boxShadow="none"; el.style.background="#F7F9FC" }}
@@ -500,7 +528,7 @@ export default function ChatUI() {
               placeholder="Message SkyChat…"
               disabled={isLoading}
               className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder-slate-400 focus:outline-none resize-none leading-relaxed disabled:opacity-50"
-              style={{ maxHeight: 160, paddingTop: 2, paddingBottom: 2 }}
+              style={{ maxHeight: 120, paddingTop: 2, paddingBottom: 2 }}
             />
             <button
               onClick={sendMessage}
@@ -516,7 +544,7 @@ export default function ChatUI() {
               </svg>
             </button>
           </div>
-          <p className="text-center mt-2 text-[11px]" style={{ color: "#CBD5E1" }}>
+          <p className="hidden sm:block text-center mt-2 text-[11px]" style={{ color: "#CBD5E1" }}>
             SkyChat may make mistakes — verify important information.
           </p>
         </div>
