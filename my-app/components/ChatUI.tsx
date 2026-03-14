@@ -27,31 +27,31 @@ function persistSessions(uid: string, sessions: ChatSession[]) {
   try { localStorage.setItem(storageKey(uid), JSON.stringify(sessions)) } catch {}
 }
 
-const SkyLogo = ({ size = 32 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="skyBg" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#52ADF5"/>
-        <stop offset="100%" stopColor="#1C6CEF"/>
-      </linearGradient>
-    </defs>
-    <rect width="64" height="64" rx="14" fill="url(#skyBg)"/>
-    {/* Cloud body */}
-    <circle cx="32" cy="24" r="11" fill="white"/>
-    <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
-    <circle cx="42.5" cy="28" r="9" fill="white"/>
-    <circle cx="14" cy="32" r="6" fill="white"/>
-    <circle cx="50" cy="32" r="6.5" fill="white"/>
-    {/* Flat base */}
-    <rect x="8" y="32" width="48" height="7" fill="white"/>
-    {/* Chat tail */}
-    <polygon points="22,39 17,46 30,39" fill="white"/>
-    {/* Three typing dots (blue cutout) */}
-    <circle cx="24" cy="36" r="2.4" fill="url(#skyBg)"/>
-    <circle cx="32" cy="36" r="2.4" fill="url(#skyBg)"/>
-    <circle cx="40" cy="36" r="2.4" fill="url(#skyBg)"/>
-  </svg>
-)
+let _logoId = 0
+const SkyLogo = ({ size = 32 }: { size?: number }) => {
+  const id = useRef(`skybg_${++_logoId}`).current
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#52ADF5"/>
+          <stop offset="100%" stopColor="#1C6CEF"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="14" fill={`url(#${id})`}/>
+      <circle cx="32" cy="24" r="11" fill="white"/>
+      <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
+      <circle cx="42.5" cy="28" r="9" fill="white"/>
+      <circle cx="14" cy="32" r="6" fill="white"/>
+      <circle cx="50" cy="32" r="6.5" fill="white"/>
+      <rect x="8" y="32" width="48" height="7" fill="white"/>
+      <polygon points="22,39 17,46 30,39" fill="white"/>
+      <circle cx="24" cy="36" r="2.4" fill={`url(#${id})`}/>
+      <circle cx="32" cy="36" r="2.4" fill={`url(#${id})`}/>
+      <circle cx="40" cy="36" r="2.4" fill={`url(#${id})`}/>
+    </svg>
+  )
+}
 
 const LogoutModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
   <div
@@ -76,18 +76,10 @@ const LogoutModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel:
         </div>
       </div>
       <div className="flex gap-2.5">
-        <button
-          onClick={onCancel}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100"
-          style={{ border: "1px solid #E2E8F0" }}
-        >
+        <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100" style={{ border: "1px solid #E2E8F0" }}>
           Cancel
         </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ background: "linear-gradient(135deg,#EF4444,#DC2626)" }}
-        >
+        <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#EF4444,#DC2626)" }}>
           Sign out
         </button>
       </div>
@@ -107,19 +99,13 @@ const LoginPromptModal = ({ onSignIn, onDismiss }: { onSignIn: () => void; onDis
       onClick={e => e.stopPropagation()}
     >
       <div className="flex flex-col items-center text-center gap-3">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#EFF6FF,#F0F9FF)" }}>
-          <SkyLogo size={32}/>
-        </div>
+        <SkyLogo size={48}/>
         <div>
           <p className="text-[15px] font-bold text-slate-800">Save your conversation</p>
           <p className="text-sm text-slate-500 mt-1 leading-relaxed">Sign in to keep your chat history across sessions. Or continue as a guest — your messages won't be saved.</p>
         </div>
       </div>
-      <button
-        onClick={onSignIn}
-        className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-        style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}
-      >
+      <button onClick={onSignIn} className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}>
         <svg className="w-4 h-4" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -128,10 +114,7 @@ const LoginPromptModal = ({ onSignIn, onDismiss }: { onSignIn: () => void; onDis
         </svg>
         Sign in with Google
       </button>
-      <button
-        onClick={onDismiss}
-        className="text-sm text-slate-400 hover:text-slate-600 transition-colors font-medium py-1"
-      >
+      <button onClick={onDismiss} className="text-sm text-slate-400 hover:text-slate-600 transition-colors font-medium py-1">
         Continue as guest
       </button>
     </div>
@@ -155,7 +138,6 @@ export default function ChatUI() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Prevent iOS Safari from zooming into the textarea on focus (causes layout jump)
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
@@ -189,7 +171,7 @@ export default function ChatUI() {
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
-    el.style.height = Math.min(el.scrollHeight, 160) + "px"
+    el.style.height = Math.min(el.scrollHeight, 120) + "px"
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -245,7 +227,7 @@ export default function ChatUI() {
     const updated = [...messages, userMsg]
     setMessages(updated)
     setInput("")
-    if (inputRef.current) inputRef.current.style.height = "auto"
+    if (inputRef.current) { inputRef.current.style.height = "auto" }
     setIsLoading(true)
     try {
       const res = await fetch("/api/chat", {
@@ -289,18 +271,16 @@ export default function ChatUI() {
       <div className="px-4 pt-5 pb-4 shrink-0">
         <div className="flex items-center gap-2.5 mb-5">
           <SkyLogo size={32}/>
-          <span style={{
-            fontWeight: 800, fontSize: 17, letterSpacing: "-0.5px",
-            background: "linear-gradient(120deg,#0EA5E9 0%,#2563EB 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-          }}>SkyChat</span>
+          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.5px", background: "linear-gradient(120deg,#52ADF5 0%,#1C6CEF 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            SkyChat
+          </span>
         </div>
         <button
           onClick={createNewChat}
           className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 group hover:-translate-y-px active:translate-y-0"
           style={{ background: "linear-gradient(135deg,#EFF6FF,#F0F9FF)", border: "1px solid #BFDBFE", color: "#1D4ED8" }}
         >
-          <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
           </svg>
           New conversation
@@ -320,11 +300,7 @@ export default function ChatUI() {
                       key={chat.id}
                       onClick={() => loadChat(chat.id)}
                       className="w-full text-left px-3 py-2.5 rounded-xl text-[13px] transition-all duration-100 flex items-start gap-2.5 group"
-                      style={active ? {
-                        background: "linear-gradient(135deg,#EFF6FF,#F0F9FF)",
-                        color: "#1D4ED8", fontWeight: 600,
-                        border: "1px solid #BFDBFE",
-                      } : { color: "#475569" }}
+                      style={active ? { background: "linear-gradient(135deg,#EFF6FF,#F0F9FF)", color: "#1D4ED8", fontWeight: 600, border: "1px solid #BFDBFE" } : { color: "#475569" }}
                     >
                       <svg className={`w-3.5 h-3.5 mt-0.5 shrink-0 transition-colors ${active ? "text-blue-500" : "text-slate-300 group-hover:text-slate-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -366,22 +342,14 @@ export default function ChatUI() {
               <p className="text-[13px] font-semibold text-slate-700 truncate leading-none">{session.user?.name}</p>
               <p className="text-[11px] text-slate-400 truncate mt-0.5">{session.user?.email}</p>
             </div>
-            <button
-              onClick={() => setShowLogoutModal(true)}
-              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-              title="Sign out"
-            >
+            <button onClick={() => setShowLogoutModal(true)} className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all shrink-0" title="Sign out">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
               </svg>
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => signIn("google")}
-            className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}
-          >
+          <button onClick={() => signIn("google")} className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}>
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -425,8 +393,8 @@ export default function ChatUI() {
 
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
 
-        <header className="flex items-center shrink-0 px-3 sm:px-5" style={{ height: 52, background: "white", borderBottom: "1px solid #EEF2F7" }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors mr-1 shrink-0">
+        <header className="flex items-center shrink-0 gap-2 px-3 sm:px-5" style={{ height: 52, background: "white", borderBottom: "1px solid #EEF2F7" }}>
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
@@ -434,7 +402,9 @@ export default function ChatUI() {
 
           <div className="flex items-center gap-2 md:hidden">
             <SkyLogo size={26}/>
-            <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.4px", background: "linear-gradient(120deg,#0EA5E9,#2563EB)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>SkyChat</span>
+            <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.4px", background: "linear-gradient(120deg,#52ADF5,#1C6CEF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              SkyChat
+            </span>
           </div>
 
           <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
@@ -448,9 +418,9 @@ export default function ChatUI() {
             <button
               onClick={createNewChat}
               className="flex items-center gap-1.5 text-[12px] font-bold px-3 py-1.5 rounded-xl transition-all hover:bg-blue-50 active:scale-[0.97]"
-              style={{ color: "#2563EB", border: "1px solid #BFDBFE" }}
+              style={{ color: "#1C6CEF", border: "1px solid #BFDBFE" }}
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
               </svg>
               <span className="hidden sm:inline">New chat</span>
@@ -459,7 +429,7 @@ export default function ChatUI() {
               <button
                 onClick={() => signIn("google")}
                 className="flex items-center gap-1.5 text-[12px] font-bold text-white px-3.5 py-1.5 rounded-xl transition-all hover:opacity-90"
-                style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}
+                style={{ background: "linear-gradient(135deg,#52ADF5,#1C6CEF)" }}
               >
                 Sign in
               </button>
@@ -467,42 +437,48 @@ export default function ChatUI() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-4 pb-6 sm:pb-10 text-center">
-              <div className="mb-5 rounded-[22px] flex items-center justify-center" style={{ width: 72, height: 72, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)", boxShadow: "0 16px 48px -8px rgba(28,108,239,0.35)" }}>
-                <SkyLogo size={40}/>
+            <div className="flex flex-col items-center justify-center h-full px-4 py-8 text-center">
+              <div className="mb-4">
+                <SkyLogo size={72}/>
               </div>
-              <h1 className="font-extrabold mb-2 tracking-tight" style={{ fontSize: "clamp(20px,4vw,26px)", background: "linear-gradient(135deg,#0F172A,#1E40AF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              <h1
+                className="font-extrabold mb-2 tracking-tight"
+                style={{ fontSize: "clamp(18px,4vw,26px)", background: "linear-gradient(135deg,#0F172A,#1E40AF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+              >
                 What can I help with?
               </h1>
-              <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-7">
+              <p className="text-sm text-slate-400 leading-relaxed mb-6" style={{ maxWidth: 280 }}>
                 Your intelligent assistant for writing, code, research, and more.
               </p>
-              <div className="grid grid-cols-2 gap-2 w-full" style={{ maxWidth: 360 }}>
+              <div className="grid grid-cols-2 gap-2 w-full" style={{ maxWidth: 340 }}>
                 {suggestions.map(s => (
                   <button
                     key={s.label}
-                    onClick={() => { setInput(s.prompt); inputRef.current?.focus() }}
-                    className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left text-[13px] font-semibold text-slate-700 transition-all duration-150 hover:-translate-y-px"
+                    onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 10) }}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-2xl text-left text-[13px] font-semibold text-slate-700 transition-all duration-150 active:scale-[0.97]"
                     style={{ background: "white", border: "1px solid #E8EDF5", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}
-                    onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = "#93C5FD"; el.style.boxShadow = "0 6px 20px rgba(37,99,235,0.10)" }}
+                    onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = "#93C5FD"; el.style.boxShadow = "0 4px 16px rgba(28,108,239,0.10)" }}
                     onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = "#E8EDF5"; el.style.boxShadow = "0 1px 4px rgba(0,0,0,0.04)" }}
                   >
-                    <span className="text-base leading-none">{s.emoji}</span>
-                    <span>{s.label}</span>
+                    <span className="text-base leading-none shrink-0">{s.emoji}</span>
+                    <span className="truncate">{s.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="py-6 px-3 sm:px-6 max-w-3xl mx-auto w-full">
+            <div className="py-4 px-3 sm:px-6 max-w-3xl mx-auto w-full">
               {messages.map((m, i) => <MessageBubble key={i} message={m}/>)}
               {isLoading && (
                 <div className="flex justify-start pt-2">
                   <div className="flex items-center gap-1.5 px-4 py-3 rounded-2xl rounded-bl-sm" style={{ background: "white", border: "1px solid #EEF2F7", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-                    {[0, 140, 280].map(d => (
-                      <span key={d} className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: `${d}ms` }}/>
+                    {[0, 140, 280].map(delay => (
+                      <span key={delay} className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: `${delay}ms` }}/>
                     ))}
                   </div>
                 </div>
@@ -512,9 +488,9 @@ export default function ChatUI() {
           )}
         </div>
 
-        <div className="shrink-0 px-3 sm:px-6 py-2 sm:py-3" style={{ background: "white", borderTop: "1px solid #EEF2F7" }}>
+        <div className="shrink-0 px-3 sm:px-6 py-2.5 sm:py-3" style={{ background: "white", borderTop: "1px solid #EEF2F7" }}>
           <div
-            className="flex items-end gap-2 sm:gap-2.5 max-w-3xl mx-auto rounded-2xl px-3 sm:px-3.5 py-2 sm:py-2.5 transition-all duration-200"
+            className="flex items-end gap-2 max-w-3xl mx-auto rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 transition-all duration-200"
             style={{ background: "#F7F9FC", border: "1.5px solid #E2E8F0" }}
             onFocusCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#93C5FD"; el.style.boxShadow="0 0 0 3px rgba(147,197,253,0.2)"; el.style.background="white" }}
             onBlurCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#E2E8F0"; el.style.boxShadow="none"; el.style.background="#F7F9FC" }}
@@ -528,15 +504,15 @@ export default function ChatUI() {
               placeholder="Message SkyChat…"
               disabled={isLoading}
               className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder-slate-400 focus:outline-none resize-none leading-relaxed disabled:opacity-50"
-              style={{ maxHeight: 120, paddingTop: 2, paddingBottom: 2 }}
+              style={{ maxHeight: 120, minHeight: 24, paddingTop: 1, paddingBottom: 1 }}
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
               className="flex items-center justify-center w-8 h-8 rounded-xl text-white transition-all duration-150 shrink-0 disabled:cursor-not-allowed active:scale-95"
               style={{
-                background: !input.trim() || isLoading ? "#CBD5E1" : "linear-gradient(135deg,#0EA5E9,#2563EB)",
-                boxShadow: !input.trim() || isLoading ? "none" : "0 4px 14px rgba(37,99,235,0.28)",
+                background: !input.trim() || isLoading ? "#CBD5E1" : "linear-gradient(135deg,#52ADF5,#1C6CEF)",
+                boxShadow: !input.trim() || isLoading ? "none" : "0 4px 14px rgba(28,108,239,0.28)",
               }}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,7 +520,7 @@ export default function ChatUI() {
               </svg>
             </button>
           </div>
-          <p className="hidden sm:block text-center mt-2 text-[11px]" style={{ color: "#CBD5E1" }}>
+          <p className="hidden sm:block text-center mt-1.5 text-[11px]" style={{ color: "#CBD5E1" }}>
             SkyChat may make mistakes — verify important information.
           </p>
         </div>
