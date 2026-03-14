@@ -1,15 +1,14 @@
-import { useRef } from "react"
+import { useId } from "react"
 import { Message } from "@/types/chat"
 
-let _avatarId = 0
 const BotAvatar = () => {
-  const id = useRef(`botbg_${++_avatarId}`).current
+  const id = useId()
   return (
     <div
-      className="flex items-center justify-center shrink-0 mr-2 mt-0.5"
-      style={{ width: 28, height: 28, borderRadius: 9, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)", boxShadow: "0 2px 8px rgba(28,108,239,0.25)" }}
+      className="shrink-0 flex items-center justify-center"
+      style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)", boxShadow: "0 2px 8px rgba(28,108,239,0.28)", marginRight: 8, marginTop: 2, flexShrink: 0 }}
     >
-      <svg width="16" height="16" viewBox="0 0 64 64" fill="none">
+      <svg width="17" height="17" viewBox="0 0 64 64" fill="none">
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#52ADF5"/>
@@ -33,10 +32,10 @@ const BotAvatar = () => {
 
 const UserAvatar = () => (
   <div
-    className="flex items-center justify-center shrink-0 ml-2 mt-0.5"
-    style={{ width: 28, height: 28, borderRadius: "50%", background: "#E8EDF5" }}
+    className="shrink-0 flex items-center justify-center"
+    style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#E8EDF5,#DDE4F0)", marginLeft: 8, marginTop: 2, flexShrink: 0 }}
   >
-    <svg width="14" height="14" fill="#94A3B8" viewBox="0 0 24 24">
+    <svg width="15" height="15" fill="#94A3B8" viewBox="0 0 24 24">
       <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
     </svg>
   </div>
@@ -44,19 +43,21 @@ const UserAvatar = () => (
 
 export default function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user"
-
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3 items-end`}>
+    <div
+      className="flex mb-3"
+      style={{ justifyContent: isUser ? "flex-end" : "flex-start", alignItems: "flex-end" }}
+    >
       {!isUser && <BotAvatar/>}
-
       <div
         style={{
-          maxWidth: "min(72%, 520px)",
-          padding: "9px 13px",
+          maxWidth: "min(75%, 540px)",
+          padding: "10px 14px",
           borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
           fontSize: 14,
           lineHeight: 1.65,
           wordBreak: "break-word",
+          overflowWrap: "break-word",
           ...(isUser ? {
             background: "linear-gradient(135deg,#52ADF5,#1C6CEF)",
             color: "white",
@@ -65,15 +66,14 @@ export default function MessageBubble({ message }: { message: Message }) {
             background: "white",
             color: "#1E293B",
             border: "1px solid #EEF2F7",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
           }),
         }}
       >
-        <p className="whitespace-pre-wrap m-0" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
+        <p style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", overflowWrap: "break-word" }}>
           {message.content}
         </p>
       </div>
-
       {isUser && <UserAvatar/>}
     </div>
   )
