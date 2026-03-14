@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, useId } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { useSession, signIn, signOut } from "next-auth/react"
 import MessageBubble from "./MessageBubble"
 import { Message } from "@/types/chat"
@@ -20,30 +20,29 @@ function persistSessions(uid: string, sessions: ChatSession[]) {
   try { localStorage.setItem(storageKey(uid), JSON.stringify(sessions)) } catch {}
 }
 
-const SkyLogo = ({ size = 32 }: { size?: number }) => {
-  const id = useId()
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#52ADF5"/>
-          <stop offset="100%" stopColor="#1C6CEF"/>
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="14" fill={`url(#${id})`}/>
-      <circle cx="32" cy="24" r="11" fill="white"/>
-      <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
-      <circle cx="42.5" cy="28" r="9" fill="white"/>
-      <circle cx="14" cy="32" r="6" fill="white"/>
-      <circle cx="50" cy="32" r="6.5" fill="white"/>
-      <rect x="8" y="32" width="48" height="7" fill="white"/>
-      <polygon points="22,39 17,46 30,39" fill="white"/>
-      <circle cx="24" cy="36" r="2.4" fill={`url(#${id})`}/>
-      <circle cx="32" cy="36" r="2.4" fill={`url(#${id})`}/>
-      <circle cx="40" cy="36" r="2.4" fill={`url(#${id})`}/>
-    </svg>
-  )
-}
+const SKY_GRAD_ID = "sky_logo_grad"
+
+const SkyLogo = ({ size = 32 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id={SKY_GRAD_ID} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#52ADF5"/>
+        <stop offset="100%" stopColor="#1C6CEF"/>
+      </linearGradient>
+    </defs>
+    <rect width="64" height="64" rx="14" fill={`url(#${SKY_GRAD_ID})`}/>
+    <circle cx="32" cy="24" r="11" fill="white"/>
+    <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
+    <circle cx="42.5" cy="28" r="9" fill="white"/>
+    <circle cx="14" cy="32" r="6" fill="white"/>
+    <circle cx="50" cy="32" r="6.5" fill="white"/>
+    <rect x="8" y="32" width="48" height="7" fill="white"/>
+    <polygon points="22,39 17,46 30,39" fill="white"/>
+    <circle cx="24" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
+    <circle cx="32" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
+    <circle cx="40" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
+  </svg>
+)
 
 const LogoutModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(8px)" }} onClick={onCancel}>
