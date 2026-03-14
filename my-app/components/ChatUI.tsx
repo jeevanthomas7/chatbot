@@ -12,7 +12,7 @@ function loadSessions(uid: string): ChatSession[] {
   try {
     const raw = localStorage.getItem(storageKey(uid))
     if (!raw) return []
-    return (JSON.parse(raw) as Array<Omit<ChatSession,"createdAt"> & {createdAt:string}>)
+    return (JSON.parse(raw) as Array<Omit<ChatSession,"createdAt"> & { createdAt: string }>)
       .map(s => ({ ...s, createdAt: new Date(s.createdAt) }))
   } catch { return [] }
 }
@@ -20,17 +20,27 @@ function persistSessions(uid: string, sessions: ChatSession[]) {
   try { localStorage.setItem(storageKey(uid), JSON.stringify(sessions)) } catch {}
 }
 
-const SKY_GRAD_ID = "sky_logo_grad"
+interface ISpeechRecognitionResult { readonly transcript: string }
+interface ISpeechRecognitionResultList { readonly length: number; [index: number]: ISpeechRecognitionResult[] }
+interface ISpeechRecognitionEvent { readonly results: ISpeechRecognitionResultList }
+interface ISpeechRecognition {
+  lang: string; interimResults: boolean; continuous: boolean
+  onresult: ((e: ISpeechRecognitionEvent) => void) | null
+  onend: (() => void) | null; onerror: (() => void) | null
+  start(): void; stop(): void
+}
+interface ISpeechRecognitionCtor { new(): ISpeechRecognition }
+interface SpeechWindow extends Window { SpeechRecognition?: ISpeechRecognitionCtor; webkitSpeechRecognition?: ISpeechRecognitionCtor }
 
-const SkyLogo = ({ size = 32 }: { size?: number }) => (
+const SkyLogo = ({ size = 32, gradId = "slg0" }: { size?: number; gradId?: string }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id={SKY_GRAD_ID} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+      <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stopColor="#52ADF5"/>
         <stop offset="100%" stopColor="#1C6CEF"/>
       </linearGradient>
     </defs>
-    <rect width="64" height="64" rx="14" fill={`url(#${SKY_GRAD_ID})`}/>
+    <rect width="64" height="64" rx="14" fill={`url(#${gradId})`}/>
     <circle cx="32" cy="24" r="11" fill="white"/>
     <circle cx="21.5" cy="28.5" r="8.5" fill="white"/>
     <circle cx="42.5" cy="28" r="9" fill="white"/>
@@ -38,44 +48,47 @@ const SkyLogo = ({ size = 32 }: { size?: number }) => (
     <circle cx="50" cy="32" r="6.5" fill="white"/>
     <rect x="8" y="32" width="48" height="7" fill="white"/>
     <polygon points="22,39 17,46 30,39" fill="white"/>
-    <circle cx="24" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
-    <circle cx="32" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
-    <circle cx="40" cy="36" r="2.4" fill={`url(#${SKY_GRAD_ID})`}/>
+    <circle cx="24" cy="36" r="2.4" fill={`url(#${gradId})`}/>
+    <circle cx="32" cy="36" r="2.4" fill={`url(#${gradId})`}/>
+    <circle cx="40" cy="36" r="2.4" fill={`url(#${gradId})`}/>
   </svg>
 )
 
 const LogoutModal = ({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(8px)" }} onClick={onCancel}>
-    <div className="w-full max-w-xs rounded-2xl p-6 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 32px 64px -12px rgba(15,23,42,0.28)" }} onClick={e => e.stopPropagation()}>
+  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(10px)" }} onClick={onCancel}>
+    <div className="w-full sm:max-w-xs rounded-t-3xl sm:rounded-2xl p-6 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 -4px 40px rgba(15,23,42,0.2)" }} onClick={e => e.stopPropagation()}>
+      <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto sm:hidden"/>
       <div className="flex flex-col items-center text-center gap-3">
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "#FEF2F2" }}>
-          <svg className="w-6 h-6" fill="none" stroke="#EF4444" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <svg className="w-6 h-6" fill="none" stroke="#EF4444" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
         </div>
         <div>
           <p className="font-bold text-slate-800" style={{ fontSize: 15 }}>Sign out of SkyChat?</p>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">Your chat history is saved and will be restored on sign-in.</p>
+          <p className="text-sm text-slate-500 mt-1 leading-relaxed">Your chat history is saved and restored on sign-in.</p>
         </div>
       </div>
-      <div className="flex gap-2.5">
-        <button onClick={onCancel} className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 transition-all active:scale-[0.97]" style={{ border: "1px solid #E2E8F0" }}>Cancel</button>
-        <button onClick={onConfirm} className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.97]" style={{ background: "linear-gradient(135deg,#EF4444,#DC2626)" }}>Sign out</button>
+      <div className="flex gap-3">
+        <button onClick={onCancel} className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 active:scale-[0.97] transition-all" style={{ border: "1px solid #E2E8F0" }}>Cancel</button>
+        <button onClick={onConfirm} className="flex-1 py-3 rounded-xl text-sm font-semibold text-white active:scale-[0.97] transition-all" style={{ background: "linear-gradient(135deg,#EF4444,#DC2626)" }}>Sign out</button>
       </div>
     </div>
   </div>
 )
 
 const LoginPromptModal = ({ onSignIn, onDismiss }: { onSignIn: () => void; onDismiss: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(15,23,42,0.45)", backdropFilter: "blur(8px)" }} onClick={onDismiss}>
-    <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 -8px 40px rgba(15,23,42,0.18)" }} onClick={e => e.stopPropagation()}>
-      <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto mb-1 sm:hidden"/>
+  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(10px)" }} onClick={onDismiss}>
+    <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 flex flex-col gap-4" style={{ background: "white", boxShadow: "0 -4px 40px rgba(15,23,42,0.2)" }} onClick={e => e.stopPropagation()}>
+      <div className="w-10 h-1 rounded-full bg-slate-200 mx-auto sm:hidden"/>
       <div className="flex flex-col items-center text-center gap-3">
-        <SkyLogo size={52}/>
+        <SkyLogo size={52} gradId="slg1"/>
         <div>
           <p className="font-bold text-slate-800" style={{ fontSize: 16 }}>Save your conversation</p>
           <p className="text-sm text-slate-500 mt-1 leading-relaxed">Sign in to keep history across sessions, or continue as guest.</p>
         </div>
       </div>
-      <button onClick={onSignIn} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98]" style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}>
+      <button onClick={onSignIn} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-bold text-white active:scale-[0.98] transition-all" style={{ background: "linear-gradient(135deg,#1E40AF,#2563EB)" }}>
         <svg className="w-4 h-4" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -84,12 +97,18 @@ const LoginPromptModal = ({ onSignIn, onDismiss }: { onSignIn: () => void; onDis
         </svg>
         Sign in with Google
       </button>
-      <button onClick={onDismiss} className="text-sm text-slate-400 font-medium py-2 text-center">Continue as guest</button>
+      <button onClick={onDismiss} className="text-sm text-slate-400 font-medium py-2 text-center active:opacity-70">Continue as guest</button>
     </div>
   </div>
 )
 
-declare global { interface Window { SpeechRecognition: typeof SpeechRecognition; webkitSpeechRecognition: typeof SpeechRecognition } }
+const TypingDots = () => (
+  <div className="flex items-center gap-1 px-4 py-3" style={{ background: "white", border: "1px solid #EEF2F7", borderRadius: "6px 18px 18px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", display: "inline-flex" }}>
+    {[0, 160, 320].map(d => (
+      <span key={d} className="rounded-full bg-sky-400 animate-bounce" style={{ width: 7, height: 7, animationDelay: `${d}ms`, animationDuration: "1s" }}/>
+    ))}
+  </div>
+)
 
 export default function ChatUI() {
   const { data: session } = useSession()
@@ -109,17 +128,18 @@ export default function ChatUI() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<ISpeechRecognition | null>(null)
 
   useEffect(() => {
-    setVoiceSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
+    const w = window as SpeechWindow
+    setVoiceSupported(!!(w.SpeechRecognition || w.webkitSpeechRecognition))
   }, [])
 
   useEffect(() => {
     const el = inputRef.current
     if (!el) return
-    const lock = () => { const m = document.querySelector('meta[name="viewport"]'); m?.setAttribute("content","width=device-width,initial-scale=1,maximum-scale=1") }
-    const unlock = () => { const m = document.querySelector('meta[name="viewport"]'); m?.setAttribute("content","width=device-width,initial-scale=1") }
+    const lock = () => document.querySelector('meta[name="viewport"]')?.setAttribute("content","width=device-width,initial-scale=1,maximum-scale=1")
+    const unlock = () => document.querySelector('meta[name="viewport"]')?.setAttribute("content","width=device-width,initial-scale=1")
     el.addEventListener("focus", lock)
     el.addEventListener("blur", unlock)
     return () => { el.removeEventListener("focus", lock); el.removeEventListener("blur", unlock) }
@@ -130,7 +150,9 @@ export default function ChatUI() {
     else { setChatSessions([]); setMessages([]); setActiveChatId(null); setHasShownLoginPrompt(false) }
   }, [userId])
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages])
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
@@ -147,18 +169,17 @@ export default function ChatUI() {
   }
 
   const startVoice = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    const w = window as SpeechWindow
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition
     if (!SR) return
     if (isListening) { recognitionRef.current?.stop(); return }
     const rec = new SR()
-    rec.lang = "en-US"
-    rec.interimResults = true
-    rec.continuous = false
+    rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false
     recognitionRef.current = rec
     setIsListening(true)
-    rec.onresult = (e: SpeechRecognitionEvent) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join("")
-      setInput(transcript)
+    rec.onresult = (e: ISpeechRecognitionEvent) => {
+      const t = Array.from({ length: e.results.length }, (_, i) => e.results[i][0].transcript).join("")
+      setInput(t)
       if (inputRef.current) autoResize(inputRef.current)
     }
     rec.onend = () => setIsListening(false)
@@ -171,7 +192,10 @@ export default function ChatUI() {
     if (userId) persistSessions(userId, updated)
   }, [userId])
 
-  const createNewChat = () => { setMessages([]); setActiveChatId(null); setInput(""); setSidebarOpen(false); setTimeout(() => inputRef.current?.focus(), 50) }
+  const createNewChat = () => {
+    setMessages([]); setActiveChatId(null); setInput(""); setSidebarOpen(false)
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
 
   const loadChat = (chatId: string) => {
     const chat = chatSessions.find(c => c.id === chatId)
@@ -183,8 +207,8 @@ export default function ChatUI() {
     if (activeChatId) {
       commitSessions(chatSessions.map(c => c.id === activeChatId ? { ...c, messages: msgs } : c))
     } else {
-      const firstUser = msgs.find(m => m.role === "user")
-      const title = firstUser ? firstUser.content.slice(0, 44) + (firstUser.content.length > 44 ? "…" : "") : "New Chat"
+      const first = msgs.find(m => m.role === "user")
+      const title = first ? first.content.slice(0, 44) + (first.content.length > 44 ? "…" : "") : "New Chat"
       const newId = Date.now().toString()
       commitSessions([{ id: newId, title, messages: msgs, createdAt: new Date() }, ...chatSessions])
       setActiveChatId(newId)
@@ -230,11 +254,11 @@ export default function ChatUI() {
     <div className="flex flex-col h-full select-none">
       <div className="px-4 pt-5 pb-4 shrink-0">
         <div className="flex items-center gap-2.5 mb-5">
-          <SkyLogo size={32}/>
+          <SkyLogo size={32} gradId="slg2"/>
           <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.5px", background: "linear-gradient(120deg,#52ADF5,#1C6CEF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>SkyChat</span>
         </div>
         <button onClick={createNewChat} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all group hover:-translate-y-px active:translate-y-0" style={{ background: "linear-gradient(135deg,#EFF6FF,#F0F9FF)", border: "1px solid #BFDBFE", color: "#1D4ED8" }}>
-          <svg className="w-4 h-4 shrink-0 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+          <svg className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
           New conversation
         </button>
       </div>
@@ -273,7 +297,7 @@ export default function ChatUI() {
         {session ? (
           <div className="flex items-center gap-3 px-2.5 py-2 rounded-xl hover:bg-slate-50 transition-colors">
             <div className="relative shrink-0">
-              <img src={session.user?.image || ""} alt="" className="w-8 h-8 rounded-full" style={{ boxShadow: "0 0 0 2px #BFDBFE" }}/>
+              <img src={session.user?.image ?? ""} alt="" className="w-8 h-8 rounded-full" style={{ boxShadow: "0 0 0 2px #BFDBFE" }}/>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400" style={{ border: "2px solid white" }}/>
             </div>
             <div className="flex-1 min-w-0">
@@ -307,149 +331,163 @@ export default function ChatUI() {
   ]
 
   return (
-    <div className="flex overflow-hidden" style={{ fontFamily: "'DM Sans','Inter',system-ui,sans-serif", background: "#F7F9FC", height: "100dvh" }}>
+    <>
+      <style>{`
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse-ring { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+        .msg-anim { animation: fadeSlideUp 0.28s cubic-bezier(0.2,0,0,1) both; }
+        .hero-anim { animation: fadeIn 0.4s ease both; }
+        .voice-pulse { animation: pulse-ring 1.4s ease infinite; }
+      `}</style>
 
-      {showLogoutModal && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogoutModal(false)}/>}
-      {showLoginPrompt && <LoginPromptModal onSignIn={() => { setShowLoginPrompt(false); signIn("google") }} onDismiss={() => setShowLoginPrompt(false)}/>}
+      <div className="flex overflow-hidden" style={{ fontFamily: "'DM Sans','Inter',system-ui,sans-serif", background: "#F7F9FC", height: "100dvh" }}>
 
-      {sidebarOpen && <div className="fixed inset-0 z-20 md:hidden" style={{ background: "rgba(15,23,42,0.35)", backdropFilter: "blur(4px)" }} onClick={() => setSidebarOpen(false)}/>}
+        {showLogoutModal && <LogoutModal onConfirm={handleLogout} onCancel={() => setShowLogoutModal(false)}/>}
+        {showLoginPrompt && <LoginPromptModal onSignIn={() => { setShowLoginPrompt(false); signIn("google") }} onDismiss={() => setShowLoginPrompt(false)}/>}
 
-      <aside className="hidden md:flex w-64 flex-col shrink-0" style={{ background: "white", borderRight: "1px solid #EEF2F7" }}>
-        <SidebarContent/>
-      </aside>
-      <aside className="fixed top-0 left-0 h-full w-[80vw] max-w-[280px] z-30 flex flex-col md:hidden" style={{ background: "white", borderRight: "1px solid #EEF2F7", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)", boxShadow: sidebarOpen ? "4px 0 32px rgba(15,23,42,0.15)" : "none" }}>
-        <SidebarContent/>
-      </aside>
+        {sidebarOpen && <div className="fixed inset-0 z-20 md:hidden" style={{ background: "rgba(15,23,42,0.4)", backdropFilter: "blur(6px)" }} onClick={() => setSidebarOpen(false)}/>}
 
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        <aside className="hidden md:flex w-64 flex-col shrink-0" style={{ background: "white", borderRight: "1px solid #EEF2F7" }}>
+          <SidebarContent/>
+        </aside>
+        <aside className="fixed top-0 left-0 h-full w-[80vw] max-w-[280px] z-30 flex flex-col md:hidden" style={{ background: "white", borderRight: "1px solid #EEF2F7", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.26s cubic-bezier(0.4,0,0.2,1)", boxShadow: sidebarOpen ? "4px 0 32px rgba(15,23,42,0.18)" : "none" }}>
+          <SidebarContent/>
+        </aside>
 
-        <header className="flex items-center shrink-0 px-3 sm:px-5" style={{ height: 52, background: "white", borderBottom: "1px solid #EEF2F7", gap: 8 }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors shrink-0" style={{ minWidth: 36 }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
-          <div className="flex items-center gap-2 md:hidden flex-1 min-w-0">
-            <SkyLogo size={28}/>
-            <span className="font-extrabold truncate" style={{ fontSize: 16, letterSpacing: "-0.4px", background: "linear-gradient(120deg,#52ADF5,#1C6CEF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>SkyChat</span>
-          </div>
-          <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"/>
-            <span className="text-[13px] font-medium text-slate-500 truncate">{activeChatId ? chatSessions.find(c => c.id === activeChatId)?.title || "Chat" : "New conversation"}</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={createNewChat} className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xl transition-all hover:bg-blue-50 active:scale-[0.97]" style={{ fontSize: 12, color: "#1C6CEF", border: "1px solid #BFDBFE" }}>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
-              <span className="hidden sm:inline">New chat</span>
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
+
+          <header className="flex items-center shrink-0 px-3 sm:px-5" style={{ height: 52, background: "white", borderBottom: "1px solid #EEF2F7", gap: 8 }}>
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-500 transition-colors shrink-0 active:scale-95" style={{ width: 36, height: 36 }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
-            {!session && (
-              <button onClick={() => signIn("google")} className="font-bold text-white px-3 py-1.5 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]" style={{ fontSize: 12, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)" }}>
-                Sign in
+            <div className="flex items-center gap-2 md:hidden flex-1 min-w-0">
+              <SkyLogo size={28} gradId="slg3"/>
+              <span className="font-extrabold truncate" style={{ fontSize: 16, letterSpacing: "-0.4px", background: "linear-gradient(120deg,#52ADF5,#1C6CEF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>SkyChat</span>
+            </div>
+            <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"/>
+              <span className="text-[13px] font-medium text-slate-500 truncate">{activeChatId ? chatSessions.find(c => c.id === activeChatId)?.title ?? "Chat" : "New conversation"}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={createNewChat} className="flex items-center gap-1.5 font-bold px-3 py-1.5 rounded-xl transition-all hover:bg-blue-50 active:scale-[0.97]" style={{ fontSize: 12, color: "#1C6CEF", border: "1px solid #BFDBFE" }}>
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
+                <span className="hidden sm:inline">New chat</span>
               </button>
+              {!session && (
+                <button onClick={() => signIn("google")} className="font-bold text-white px-3 py-1.5 rounded-xl transition-all hover:opacity-90 active:scale-[0.97]" style={{ fontSize: 12, background: "linear-gradient(135deg,#52ADF5,#1C6CEF)" }}>Sign in</button>
+              )}
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+            {messages.length === 0 ? (
+              <div className="hero-anim flex flex-col items-center justify-center h-full px-5 text-center" style={{ paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
+                <div style={{ marginBottom: 18, filter: "drop-shadow(0 8px 24px rgba(28,108,239,0.25))" }}>
+                  <SkyLogo size={72} gradId="slg4"/>
+                </div>
+                <h1 className="font-extrabold tracking-tight" style={{ fontSize: "clamp(20px,5vw,28px)", lineHeight: 1.2, marginBottom: 10, background: "linear-gradient(135deg,#0F172A,#1E40AF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  What can I help with?
+                </h1>
+                <p className="text-slate-400 leading-relaxed" style={{ fontSize: 14, maxWidth: 260, marginBottom: 28 }}>
+                  Your intelligent assistant for writing, code, research, and more.
+                </p>
+                <div className="grid grid-cols-2 w-full" style={{ maxWidth: 360, gap: 10 }}>
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={s.label}
+                      onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 10) }}
+                      className="flex items-center text-left active:scale-[0.95] transition-all"
+                      style={{ gap: 9, padding: "12px 14px", borderRadius: 16, background: "white", border: "1px solid #E8EDF5", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", fontSize: 13, fontWeight: 600, color: "#374151", animationDelay: `${i * 60}ms`, animation: "fadeSlideUp 0.35s cubic-bezier(0.2,0,0,1) both" }}
+                      onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = "#93C5FD"; el.style.boxShadow = "0 4px 16px rgba(28,108,239,0.12)" }}
+                      onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = "#E8EDF5"; el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)" }}
+                    >
+                      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{s.emoji}</span>
+                      <span className="truncate">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="py-4 px-3 sm:px-6 max-w-3xl mx-auto w-full">
+                {messages.map((m, i) => (
+                  <div key={i} className="msg-anim" style={{ animationDelay: `${Math.min(i * 20, 60)}ms` }}>
+                    <MessageBubble message={m}/>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start pt-1 msg-anim">
+                    <TypingDots/>
+                  </div>
+                )}
+                <div ref={messagesEndRef}/>
+              </div>
             )}
           </div>
-        </header>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full px-5 text-center" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-              <div style={{ marginBottom: 16 }}><SkyLogo size={68}/></div>
-              <h1 className="font-extrabold tracking-tight" style={{ fontSize: "clamp(20px,5vw,28px)", lineHeight: 1.2, marginBottom: 10, background: "linear-gradient(135deg,#0F172A,#1E40AF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                What can I help with?
-              </h1>
-              <p className="text-slate-400 leading-relaxed" style={{ fontSize: 14, maxWidth: 260, marginBottom: 24 }}>
-                Your intelligent assistant for writing, code, research, and more.
-              </p>
-              <div className="grid grid-cols-2 w-full" style={{ maxWidth: 360, gap: 10 }}>
-                {suggestions.map(s => (
+          <div className="shrink-0" style={{ background: "white", borderTop: "1px solid #EEF2F7", paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
+            <div className="px-3 sm:px-6 py-2.5 sm:py-3 max-w-3xl mx-auto">
+              <div
+                className="flex items-end transition-all duration-200"
+                style={{ background: "#F7F9FC", border: "1.5px solid #E2E8F0", borderRadius: 22, padding: "8px 8px 8px 14px", gap: 6 }}
+                onFocusCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#93C5FD"; el.style.boxShadow="0 0 0 3px rgba(147,197,253,0.2)"; el.style.background="white" }}
+                onBlurCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#E2E8F0"; el.style.boxShadow="none"; el.style.background="#F7F9FC" }}
+              >
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  rows={1}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Message SkyChat…"
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none resize-none leading-relaxed disabled:opacity-50"
+                  style={{ fontSize: 14, maxHeight: 100, minHeight: 22, paddingTop: 3, paddingBottom: 3 }}
+                />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {voiceSupported && (
+                    <button
+                      onClick={startVoice}
+                      className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 active:scale-90 ${isListening ? "voice-pulse" : ""}`}
+                      style={{ background: isListening ? "linear-gradient(135deg,#EF4444,#DC2626)" : "#EEF2F7" }}
+                      title={isListening ? "Stop listening" : "Voice input"}
+                    >
+                      {isListening ? (
+                        <svg className="w-3.5 h-3.5" fill="white" viewBox="0 0 24 24">
+                          <rect x="6" y="4" width="4" height="16" rx="2"/>
+                          <rect x="14" y="4" width="4" height="16" rx="2"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="#64748B" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+                        </svg>
+                      )}
+                    </button>
+                  )}
                   <button
-                    key={s.label}
-                    onClick={() => { setInput(s.prompt); setTimeout(() => inputRef.current?.focus(), 10) }}
-                    className="flex items-center text-left transition-all active:scale-[0.96]"
-                    style={{ gap: 8, padding: "11px 13px", borderRadius: 16, background: "white", border: "1px solid #E8EDF5", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", fontSize: 13, fontWeight: 600, color: "#374151" }}
-                    onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor="#93C5FD"; el.style.boxShadow="0 4px 16px rgba(28,108,239,0.10)" }}
-                    onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor="#E8EDF5"; el.style.boxShadow="0 1px 4px rgba(0,0,0,0.05)" }}
-                  >
-                    <span style={{ fontSize: 17, lineHeight: 1, flexShrink: 0 }}>{s.emoji}</span>
-                    <span className="truncate">{s.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="py-4 px-3 sm:px-6 max-w-3xl mx-auto w-full">
-              {messages.map((m, i) => <MessageBubble key={i} message={m}/>)}
-              {isLoading && (
-                <div className="flex justify-start pt-2">
-                  <div className="flex items-center gap-1.5 px-4 py-3 rounded-2xl rounded-bl-sm" style={{ background: "white", border: "1px solid #EEF2F7", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-                    {[0,140,280].map(d => <span key={d} className="w-2 h-2 rounded-full bg-sky-400 animate-bounce" style={{ animationDelay: `${d}ms` }}/>)}
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef}/>
-            </div>
-          )}
-        </div>
-
-        <div className="shrink-0" style={{ background: "white", borderTop: "1px solid #EEF2F7", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-          <div className="px-3 sm:px-6 py-2.5 sm:py-3 max-w-3xl mx-auto">
-            <div
-              className="flex items-end transition-all duration-200"
-              style={{ background: "#F7F9FC", border: "1.5px solid #E2E8F0", borderRadius: 20, padding: "8px 8px 8px 14px", gap: 6 }}
-              onFocusCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#93C5FD"; el.style.boxShadow="0 0 0 3px rgba(147,197,253,0.18)"; el.style.background="white" }}
-              onBlurCapture={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor="#E2E8F0"; el.style.boxShadow="none"; el.style.background="#F7F9FC" }}
-            >
-              <textarea
-                ref={inputRef}
-                value={input}
-                rows={1}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Message SkyChat…"
-                disabled={isLoading}
-                className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none resize-none leading-relaxed disabled:opacity-50"
-                style={{ fontSize: 14, maxHeight: 100, minHeight: 22, paddingTop: 2, paddingBottom: 2 }}
-              />
-              <div className="flex items-center gap-1.5 shrink-0">
-                {voiceSupported && (
-                  <button
-                    onClick={startVoice}
-                    className="flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-150 active:scale-95"
+                    onClick={sendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="flex items-center justify-center w-8 h-8 rounded-xl text-white transition-all duration-150 active:scale-90 disabled:cursor-not-allowed"
                     style={{
-                      background: isListening ? "linear-gradient(135deg,#EF4444,#DC2626)" : "#EEF2F7",
-                      boxShadow: isListening ? "0 0 0 4px rgba(239,68,68,0.2)" : "none",
+                      background: !input.trim() || isLoading ? "#CBD5E1" : "linear-gradient(135deg,#52ADF5,#1C6CEF)",
+                      boxShadow: !input.trim() || isLoading ? "none" : "0 4px 12px rgba(28,108,239,0.32)",
                     }}
-                    title="Voice input"
                   >
-                    {isListening ? (
-                      <svg className="w-3.5 h-3.5" fill="white" viewBox="0 0 24 24">
-                        <rect x="6" y="4" width="4" height="16" rx="2"/>
-                        <rect x="14" y="4" width="4" height="16" rx="2"/>
-                      </svg>
-                    ) : (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="#64748B" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                      </svg>
-                    )}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
                   </button>
-                )}
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim() || isLoading}
-                  className="flex items-center justify-center w-8 h-8 rounded-xl text-white transition-all duration-150 disabled:cursor-not-allowed active:scale-95"
-                  style={{
-                    background: !input.trim() || isLoading ? "#CBD5E1" : "linear-gradient(135deg,#52ADF5,#1C6CEF)",
-                    boxShadow: !input.trim() || isLoading ? "none" : "0 4px 12px rgba(28,108,239,0.3)",
-                  }}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+                </div>
               </div>
+              <p className="text-center text-[11px] mt-1.5" style={{ color: "#C0CADB", letterSpacing: "0.01em" }}>
+                SkyChat may make mistakes — verify important information.
+              </p>
             </div>
-            <p className="text-center text-[11px] mt-1.5" style={{ color: "#C0CADB", letterSpacing: "0.01em" }}>SkyChat may make mistakes — verify important information.</p>
           </div>
-        </div>
 
+        </div>
       </div>
-    </div>
+    </>
   )
 }
