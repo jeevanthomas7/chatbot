@@ -499,6 +499,7 @@ export default function ChatUI() {
               </p>
             </div>
           </div>
+          
 
         </div>
       </div>
