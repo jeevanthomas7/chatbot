@@ -232,11 +232,26 @@ export default function ChatUI() {
       saveOrUpdateChat(final)
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }])
-    } finally { setIsLoading(false) }
+    } finally { 
+      setIsLoading(false)
+    }
   }
 
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus()
+    }
+  }, [isLoading])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage() }
+    if (e.key === "Enter" && !e.shiftKey) {
+      if (isLoading) {
+        e.preventDefault()
+        return
+      }
+      e.preventDefault()
+      sendMessage()
+    }
   }
 
   const grouped = chatSessions.reduce<Record<string, ChatSession[]>>((acc, chat) => {
@@ -440,7 +455,6 @@ export default function ChatUI() {
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Message SkyChat…"
-                  disabled={isLoading}
                   className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none resize-none leading-relaxed disabled:opacity-50"
                   style={{ fontSize: 14, maxHeight: 100, minHeight: 22, paddingTop: 3, paddingBottom: 3 }}
                 />
